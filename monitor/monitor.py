@@ -17,9 +17,9 @@ logging.basicConfig(filename="health_check.log", level=logging.INFO)
 def connect_to_rabbitmq():
     while True:
         try:
-            connection = pika.BlockingConnection(pika.ConnectionParameters(host="rabbitmq"))
+            connection = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
             channel = connection.channel()
-            channel.queue_declare(queue="health_check_queue", durable=True)
+            channel.exchange_declare(exchange='health_request_fanout', exchange_type='fanout')
             logging.info("Connected to RabbitMQ successfully")
             return connection, channel
         except pika.exceptions.AMQPConnectionError:
@@ -33,36 +33,15 @@ def send_alert(message):
         requests.post(ALERT_API_URL, json={"text": message})
 
 
-def log_message(message, log_fn=logging.info, alert_needed=False):
-    log_fn(message)
-    channel.basic_publish(exchange="", routing_key="health_check_queue", body=message)
-    if alert_needed:
-        send_alert(message)
-
-
-def check_service_health(service_url):
-    try:
-        response = requests.get(service_url)
-        if response.status_code == 200:
-            log_message(f"{datetime.now()}: {service_url} is healthy")
-        else:
-            log_message(
-                f"{datetime.now()}: {service_url} unhealthy, status code: {response.status_code}",
-                logging.error,
-                alert_needed=True,
-            )
-    except requests.exceptions.RequestException as e:
-        log_message(
-            f"{datetime.now()}: {service_url} unreachable, error: {e}",
-            logging.error,
-            alert_needed=True,
-        )
-
+def check_service_health(health_request_id: int):
+    key = '"health_request_id"'
+    channel.basic_publish(exchange='health_request_fanout', routing_key='', body=f"{{{key}: {health_request_id}}}")
 
 if __name__ == "__main__":
+    health_request_id : int = 1
     while True:
-        for service_url in SERVICE_URLS:
-            check_service_health(service_url.strip())
+        check_service_health(health_request_id)
+        health_request_id = health_request_id + 1
         time.sleep(CHECK_INTERVAL)
 
 connection.close()
