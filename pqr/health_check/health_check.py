@@ -3,12 +3,24 @@ import os
 import time
 
 import pika
+import random
 
 RETRY_INTERVAL = 5  # Intervalo para reintentar conexión a RabbitMQ en segundos
 INSTANCE_ID = os.getenv("INSTANCE_ID")
 
 
 class HealthCheck:
+    @staticmethod
+    def is_health_ok() ->  str:
+        IS_FAILING_SERVICE : bool = os.getenv("IS_FAILING_SERVICE", False)
+
+        # Verifica si el servicio puede fallar
+        if IS_FAILING_SERVICE:
+            return random.choice([True, False])
+        else:
+            return False
+
+
     @staticmethod
     def connect_to_rabbitmq():
         while True:
@@ -45,12 +57,17 @@ class HealthCheck:
 
             health_request_id = data.get("health_request_id", None)
 
-            channel.basic_publish(
-                exchange="",
-                routing_key="health_response_queue",
-                properties=pika.BasicProperties(app_id=f"pqr_{INSTANCE_ID}"),
-                body=f'instance_id: {INSTANCE_ID}, health_request_id: {health_request_id}, "status":"ok"',
-            )
+            if HealthCheck.is_health_ok():
+                channel.basic_publish(
+                    exchange="",
+                    routing_key="health_response_queue",
+                    properties=pika.BasicProperties(app_id=f"pqr_{INSTANCE_ID}"),
+                    body=f'instance_id: {INSTANCE_ID}, health_request_id: {health_request_id}, "status":"ok"',
+                )
+                # channel.basic_publish(exchange="", routing_key="health_check_queue", body=f'instance_id: 1, health_request_id: {health_request_id}, "status":"ok"')
+            else:
+                print("service not ok") 
+
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
         channel.basic_consume(
