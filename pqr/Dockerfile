@@ -6,4 +6,6 @@ COPY . /app
 
 RUN pip install -r requirements.txt
 
+ENV INSTANCE_ID=1
+
 CMD ["python", "app.py"]
