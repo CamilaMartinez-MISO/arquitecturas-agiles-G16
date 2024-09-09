@@ -11,8 +11,6 @@ ALERT_API_URL = os.getenv("ALERT_API_URL", None)
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", 10))  # Interval in seconds
 RETRY_INTERVAL = 5  # Interval to retry RabbitMQ connection in seconds
 
-logging.basicConfig(filename="health_check.log", level=logging.INFO)
-
 
 def connect_to_rabbitmq():
     while True:
