@@ -1,25 +1,39 @@
 import json
+import logging
 import os
+import random
 import time
 
 import pika
-import random
 
 RETRY_INTERVAL = 5  # Intervalo para reintentar conexión a RabbitMQ en segundos
 INSTANCE_ID = os.getenv("INSTANCE_ID")
 
 
+lgr = logging.getLogger("health_check")
+lgr.setLevel(logging.INFO)  # log all escalated at and above DEBUG
+# add a file handler
+fh = logging.FileHandler("health_check_pqr_log.csv")
+fh.setLevel(logging.INFO)  # ensure all messages are logged to file
+
+# create a formatter and set the formatter for the handler.
+frmt = logging.Formatter("'%(asctime)s','%(name)s','%(levelname)s','%(message)s'")
+fh.setFormatter(frmt)
+
+# add the Handler to the logger
+lgr.addHandler(fh)
+
+
 class HealthCheck:
     @staticmethod
-    def is_health_ok() ->  str:
-        IS_FAILING_SERVICE : bool = os.getenv("IS_FAILING_SERVICE", False)
+    def is_health_ok() -> str:
+        IS_FAILING_SERVICE: bool = os.getenv("IS_FAILING_SERVICE", False)
 
         # Verifica si el servicio puede fallar
         if IS_FAILING_SERVICE:
             return random.choice([True, False])
         else:
             return False
-
 
     @staticmethod
     def connect_to_rabbitmq():
@@ -57,17 +71,16 @@ class HealthCheck:
 
             health_request_id = data.get("health_request_id", None)
 
-            if HealthCheck.is_health_ok():
-                channel.basic_publish(
-                    exchange="",
-                    routing_key="health_response_queue",
-                    properties=pika.BasicProperties(app_id=f"pqr_{INSTANCE_ID}"),
-                    body=f'instance_id: {INSTANCE_ID}, health_request_id: {health_request_id}, "status":"ok"',
-                )
-                # channel.basic_publish(exchange="", routing_key="health_check_queue", body=f'instance_id: 1, health_request_id: {health_request_id}, "status":"ok"')
-            else:
-                print("service not ok") 
-
+            status = "ok" if HealthCheck.is_health_ok() else "error"
+            message = f'instance_id: {INSTANCE_ID}, health_request_id: {health_request_id}, "status":"{status}"'
+            channel.basic_publish(
+                exchange="",
+                routing_key="health_response_queue",
+                properties=pika.BasicProperties(app_id=f"pqr_{INSTANCE_ID}"),
+                body=message,
+            )
+            log_message = f"{message}".replace("b'", "").replace("'", "")
+            lgr.info(log_message)
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
         channel.basic_consume(

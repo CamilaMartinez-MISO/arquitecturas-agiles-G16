@@ -7,7 +7,7 @@ from datetime import datetime
 import pika
 
 RABBIT_RETRY_INTERVAL = int(os.environ.get("RABBIT_RETRY_INTERVAL", 5))
-CHECK_OFFLINE_INTERVAL = int(os.environ.get("CHECK_OFFLINE_INTERVAL", 60))
+CHECK_OFFLINE_INTERVAL = int(os.environ.get("CHECK_OFFLINE_INTERVAL", 12))
 
 lgr = logging.getLogger("health_check")
 lgr.setLevel(logging.INFO)  # log all escalated at and above DEBUG

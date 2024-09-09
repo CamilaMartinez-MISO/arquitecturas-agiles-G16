@@ -17,6 +17,7 @@ services:
       context: ./pqr
     environment:
       - FLASK_ENV=development
+      - IS_FAILING_SERVICE=True
     ports:
       - "5000:5000"
     depends_on:
