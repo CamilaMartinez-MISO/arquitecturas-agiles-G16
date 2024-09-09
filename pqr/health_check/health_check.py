@@ -11,7 +11,7 @@ class HealthCheck:
         while True:
             try:
                 connection = pika.BlockingConnection(
-                    pika.ConnectionParameters(host="localhost")
+                    pika.ConnectionParameters(host="rabbitmq")
                 )
                 print("Connected to RabbitMQ successfully")
                 return connection
