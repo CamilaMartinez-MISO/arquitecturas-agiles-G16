@@ -2,8 +2,8 @@ import pika
 import time
 import json
 
+RETRY_INTERVAL = 5  # Intervalo para reintentar la conexión a RabbitMQ en segundos
 
-RETRY_INTERVAL = 5  # Intervalo para reintentar conexión a RabbitMQ en segundos
 
 class HealthCheck:
     @staticmethod
@@ -31,16 +31,26 @@ class HealthCheck:
         channel.queue_bind(exchange='health_request_fanout', queue=queue_name)
 
         def callback(ch, method, properties, body):
-            print(f'Data receive: {body.decode()}')
+            print(f'Data received: {body.decode()}')
             try:
                 data = json.loads(body.decode())
             except json.JSONDecodeError as e:
-                print(f"Error al decodificar JSON: {e}")
+                print(f"Error decoding JSON: {e}")
                 data = {}
 
             health_request_id = data.get('health_request_id', None)
 
-            channel.basic_publish(exchange="", routing_key="health_check_queue", body=f'instance_id: 1, health_request_id: {health_request_id}, "status":"ok"')
+            if health_request_id is not None:
+                response_body = json.dumps({
+                    "instance_id": 1,
+                    "health_request_id": health_request_id,
+                    "status": "ok",
+                    "timestamp": time.time()
+                })
+                print(f"Sending health response: {response_body}")
+                channel.basic_publish(
+                    exchange="", routing_key="health_check_queue", body=response_body
+                )
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
         channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=False)
@@ -56,7 +66,7 @@ class HealthCheck:
     def init():
         connection = HealthCheck.connect_to_rabbitmq()
         fanout_channel = HealthCheck.init_fanout_channel(connection)
-        normal_channel = HealthCheck.init_response_channel(connection)
+        HealthCheck.init_response_channel(connection)
 
         print("Waiting for messages...")
         try:
@@ -65,5 +75,3 @@ class HealthCheck:
             fanout_channel.stop_consuming()
         finally:
             connection.close()
-
-
