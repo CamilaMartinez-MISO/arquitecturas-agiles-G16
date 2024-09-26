@@ -20,5 +20,23 @@ app_context = app.app_context()
 app_context.push()
 
 
+@app.route("/api/pqrs", methods=["POST"])
+def access_resource():
+    token = request.headers.get("Authorization").split(" ")[1]  # Extraer el token
+    try:
+        # Verificar el token con el autorizador
+        response = requests.post(
+            "http://authorization:5001/validate_permission",
+            json={"token": token, "resource": "pqrs", "method": "POST"},
+        )
+        if response.status_code == 200:
+            # El acceso está permitido, redirigir a microservicio
+            return jsonify({"message": "Acceso permitido a los recursos."}), 200
+        else:
+            return jsonify({"message": "Acceso denegado"}), 403
+    except Exception as e:
+        return jsonify({"message": "Token inválido o expirado"}), 401
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=API_REST_PORT, debug=False)

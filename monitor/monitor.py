@@ -6,7 +6,6 @@ import time
 import pika
 from health_check.health_check import HealthCheckReceiver
 
-SERVICE_URLS = os.getenv("SERVICE_URLS", "").split(",")
 ALERT_API_URL = os.getenv("ALERT_API_URL", None)
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", 10))  # Interval in seconds
 RETRY_INTERVAL = 5  # Interval to retry RabbitMQ connection in seconds

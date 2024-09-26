@@ -27,8 +27,15 @@ services:
     build:
       context: ./monitor
     environment:
-      - SERVICE_URLS=http://pqr:5000/pqrs
       - CHECK_INTERVAL=10
     depends_on:
       - pqr
       - rabbitmq
+
+  api_gateway:
+    build:
+      context: ./api_gateway
+    environment:
+      - FLASK_ENV=development
+    ports:
+      - "5000:5000"
