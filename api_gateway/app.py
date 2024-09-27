@@ -5,6 +5,7 @@ import requests
 from flask import Flask, jsonify, request
 
 API_REST_PORT = int(os.getenv("API_REST_PORT", 5000))
+VALIDATOR_URL = int(os.getenv("VALIDATOR_URL", "localhost:5010"))
 SECRET_KEY = os.getenv("SECRET_KEY", "secret_key")
 
 
@@ -26,7 +27,7 @@ def access_resource():
     try:
         # Verificar el token con el autorizador
         response = requests.post(
-            "http://authorization:5001/validate_permission",
+            f'{VALIDATOR_URL}/validate_permission',
             json={"token": token, "resource": "pqrs", "method": "POST"},
         )
         if response.status_code == 200:

@@ -6,6 +6,6 @@ COPY . /app
 
 RUN pip install -r requirements.txt
 
-ENV INSTANCE_ID=1
+ENV VALIDATOR_URL=localhost:5010
 
 CMD ["python", "app.py"]
