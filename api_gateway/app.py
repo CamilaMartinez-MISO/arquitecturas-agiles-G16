@@ -26,9 +26,13 @@ def access_resource():
     token = request.headers.get("Authorization").split(" ")[1]  # Extraer el token
     try:
         # Verificar el token con el autorizador
-        response = requests.post(
-            f'{VALIDATOR_URL}/validate_permission',
-            json={"token": token, "resource": "pqrs", "method": "POST"},
+        response = requests.get(
+            f"{VALIDATOR_URL}/validate_permission",
+            json={"resource": "/pqrs", "method": "POST"},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token,
+            },
         )
         if response.status_code == 200:
             # El acceso está permitido, redirigir a microservicio
