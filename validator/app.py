@@ -12,14 +12,12 @@ app = Flask(__name__)
 app_context = app.app_context()
 app_context.push()
 
-
-
 @app.route("/validate_permission", methods=["GET"])
 def validate_permission():
     token = request.headers.get('Authorization')
-    body = request.get_data()
-    resource = body.resource
-    method = body.method
+    body = request.get_json()
+    resource = body.get("resource")
+    method = body.get("method")
 
     if not token:
         return jsonify({'message': 'Token no enviado en la solicitud'}), 401
