@@ -12,12 +12,14 @@ app = Flask(__name__)
 app_context = app.app_context()
 app_context.push()
 
-allowed_resources = {"methods": ["GET", "POST"], "endpoints": ["/pqr", "/settlement"]}
 
 
 @app.route("/validate_permission", methods=["GET"])
 def validate_permission():
     token = request.headers.get('Authorization')
+    body = request.get_data()
+    resource = body.resource
+    method = body.method
 
     if not token:
         return jsonify({'message': 'Token no enviado en la solicitud'}), 401
@@ -29,10 +31,11 @@ def validate_permission():
         if len(payload) > 0 : 
             print(f'Payload: {payload}')
             permiso_str = payload['permisos'][0]
-            metodo, ruta = permiso_str.split()
-            if metodo in allowed_resources['methods'] and ruta in allowed_resources['endpoints']:
+            method_allowed, resource_allowed = permiso_str.split()
+
+            if resource == resource_allowed and method == method_allowed:
                 print("Acceso permitido.")
-                return jsonify({'message': 'Acceso concedido'}), 200
+                return jsonify({'message': 'Acceso permitido'}), 200
             return jsonify({'message': 'No se tiene permiso a los recursos solicitados'}), 401
 
         return jsonify({'message': 'No se adjuntaron permisos en la solicitud'}), 401
