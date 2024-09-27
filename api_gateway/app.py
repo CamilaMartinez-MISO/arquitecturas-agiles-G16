@@ -1,11 +1,16 @@
+import logging
 import os
 
 import jwt
 import requests
 from flask import Flask, jsonify, request
 
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
 API_REST_PORT = int(os.getenv("API_REST_PORT", 5000))
-VALIDATOR_URL = int(os.getenv("VALIDATOR_URL", "localhost:5010"))
+VALIDATOR_URL = os.getenv("VALIDATOR_URL", "validator:5010")
 SECRET_KEY = os.getenv("SECRET_KEY", "secret_key")
 
 
@@ -24,22 +29,25 @@ app_context.push()
 @app.route("/api/pqrs", methods=["POST"])
 def access_resource():
     token = request.headers.get("Authorization").split(" ")[1]  # Extraer el token
+    logging.info(f"http://{VALIDATOR_URL}/validate_permission")
     try:
         # Verificar el token con el autorizador
         response = requests.get(
-            f"{VALIDATOR_URL}/validate_permission",
+            f"http://{VALIDATOR_URL}/validate_permission",
             json={"resource": "/pqrs", "method": "POST"},
             headers={
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + token,
             },
         )
+        logging.info(response)
         if response.status_code == 200:
             # El acceso está permitido, redirigir a microservicio
             return jsonify({"message": "Acceso permitido a los recursos."}), 200
         else:
             return jsonify({"message": "Acceso denegado"}), 403
     except Exception as e:
+        logging.info(e)
         return jsonify({"message": "Token inválido o expirado"}), 401
 
 
