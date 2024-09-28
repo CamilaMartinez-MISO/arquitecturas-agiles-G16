@@ -8,6 +8,8 @@ import pika
 
 RABBIT_RETRY_INTERVAL = int(os.environ.get("RABBIT_RETRY_INTERVAL", 5))
 CHECK_OFFLINE_INTERVAL = int(os.environ.get("CHECK_OFFLINE_INTERVAL", 12))
+RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
+RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "guest")
 
 lgr = logging.getLogger("health_check")
 lgr.setLevel(logging.INFO)  # log all escalated at and above DEBUG
@@ -30,8 +32,12 @@ class HealthCheckReceiver:
     def connect_to_rabbitmq():
         while True:
             try:
+                credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
                 connection = pika.BlockingConnection(
-                    pika.ConnectionParameters(host="rabbitmq")
+                    pika.ConnectionParameters(
+                        host="rabbitmq",
+                        credentials=credentials,
+                    ),
                 )
                 print("Connected to RabbitMQ successfully")
                 return connection

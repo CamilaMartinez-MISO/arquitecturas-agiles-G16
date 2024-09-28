@@ -11,6 +11,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
 
   pqr:
     build:
@@ -18,6 +21,8 @@ services:
     environment:
       - FLASK_ENV=development
       - IS_FAILING_SERVICE=True
+      - RABBITMQ_USER=user
+      - RABBITMQ_PASSWORD=password
     ports:
       - "5001:5000"
     depends_on:
@@ -28,6 +33,8 @@ services:
       context: ./monitor
     environment:
       - CHECK_INTERVAL=10
+      - RABBITMQ_USER=user
+      - RABBITMQ_PASSWORD=password
     depends_on:
       - pqr
       - rabbitmq

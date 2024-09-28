@@ -6,16 +6,27 @@ import time
 import pika
 from health_check.health_check import HealthCheckReceiver
 
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
 ALERT_API_URL = os.getenv("ALERT_API_URL", None)
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", 10))  # Interval in seconds
 RETRY_INTERVAL = 5  # Interval to retry RabbitMQ connection in seconds
+RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
+RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "guest")
 
 
 def connect_to_rabbitmq():
     while True:
         try:
+            logging.info("Connecting to RabbitMQ...{}".format(RABBITMQ_USER))
+            credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
             connection = pika.BlockingConnection(
-                pika.ConnectionParameters(host="rabbitmq")
+                pika.ConnectionParameters(
+                    host="rabbitmq",
+                    credentials=credentials,
+                ),
             )
             channel = connection.channel()
             channel.exchange_declare(

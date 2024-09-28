@@ -8,6 +8,8 @@ import pika
 
 RETRY_INTERVAL = 5  # Intervalo para reintentar conexión a RabbitMQ en segundos
 INSTANCE_ID = os.getenv("INSTANCE_ID")
+RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
+RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD", "guest")
 
 
 lgr = logging.getLogger("health_check")
@@ -39,8 +41,12 @@ class HealthCheck:
     def connect_to_rabbitmq():
         while True:
             try:
+                credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASSWORD)
                 connection = pika.BlockingConnection(
-                    pika.ConnectionParameters(host="rabbitmq")
+                    pika.ConnectionParameters(
+                        host="rabbitmq",
+                        credentials=credentials,
+                    ),
                 )
                 print("Connected to RabbitMQ successfully")
                 return connection
